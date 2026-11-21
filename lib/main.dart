@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-import 'screens/home_screen.dart';
+import 'screens/app_shell.dart';
 
 void main() => runApp(const ProviderScope(child: InOutApp()));
 
@@ -15,8 +15,8 @@ class InOutApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      // builder: (context, child) => MaterialUiCompatibilityBridge(child: child!),
-      home: const HomeScreen(),
+      builder: (context, child) => MaterialUiCompatibilityBridge(child: child!),
+      home: const AppShell(),
     );
   }
 }
