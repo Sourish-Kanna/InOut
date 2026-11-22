@@ -6,6 +6,7 @@ import '../data/app_database.dart';
 import '../providers/providers.dart';
 import '../utils/time_utils.dart';
 import '../widgets/session_editor.dart';
+import '../utils/csv_export.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -23,13 +24,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       a.year == b.year && a.month == b.month && a.day == b.day;
 
   (Color bg, Color fg)? _colors(DayStatus s) => switch (s) {
-        DayStatus.met => (Colors.green.shade200, Colors.green.shade900),
-        DayStatus.partial => (Colors.amber.shade200, Colors.amber.shade900),
-        DayStatus.short => (Colors.red.shade200, Colors.red.shade900),
-        DayStatus.missed => (Colors.red.shade50, Colors.red.shade300),
-        DayStatus.inProgress => (Colors.blue.shade200, Colors.blue.shade900),
-        DayStatus.none => null,
-      };
+    DayStatus.met => (Colors.green.shade200, Colors.green.shade900),
+    DayStatus.partial => (Colors.amber.shade200, Colors.amber.shade900),
+    DayStatus.short => (Colors.red.shade200, Colors.red.shade900),
+    DayStatus.missed => (Colors.red.shade50, Colors.red.shade300),
+    DayStatus.inProgress => (Colors.blue.shade200, Colors.blue.shade900),
+    DayStatus.none => null,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -45,8 +46,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         if (s.clockOut == null) _key(s.clockIn),
     };
     final monthTotal = totalFor(sessions, now);
-    final daySessions =
-        sessions.where((s) => _sameDay(s.clockIn, _selected)).toList();
+    final daySessions = sessions
+        .where((s) => _sameDay(s.clockIn, _selected))
+        .toList();
     final scheme = Theme.of(context).colorScheme;
 
     Widget cell(DateTime date) {
@@ -60,8 +62,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       );
       final c = _colors(status);
       final isWeekend = k.weekday >= DateTime.saturday;
-      final fg = c?.$2 ??
-          (isWeekend ? scheme.onSurfaceVariant : scheme.onSurface);
+      final fg =
+          c?.$2 ?? (isWeekend ? scheme.onSurfaceVariant : scheme.onSurface);
       final selected = _sameDay(k, _selected);
       final today = _sameDay(k, now);
 
@@ -73,19 +75,23 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           border: selected
               ? Border.all(color: scheme.primary, width: 2)
               : today
-                  ? Border.all(color: scheme.outline)
-                  : null,
+              ? Border.all(color: scheme.outline)
+              : null,
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('${k.day}',
-                  style: TextStyle(color: fg, fontWeight: FontWeight.w600)),
+              Text(
+                '${k.day}',
+                style: TextStyle(color: fg, fontWeight: FontWeight.w600),
+              ),
               if (total > Duration.zero)
-                Text(formatHm(total),
-                    style: TextStyle(color: fg, fontSize: 10)),
+                Text(
+                  formatHm(total),
+                  style: TextStyle(color: fg, fontSize: 10),
+                ),
             ],
           ),
         ),
@@ -93,7 +99,26 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Calendar')),
+      appBar: AppBar(
+        title: const Text('Calendar'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            tooltip: 'Export CSV',
+            onPressed: () async {
+              final r = await exportCsv(ref.read(databaseProvider));
+              if (!context.mounted) return;
+              final msg = switch (r) {
+                ExportResult.saved => 'Saved to Downloads/InOut',
+                ExportResult.empty => 'Nothing to export yet',
+                ExportResult.failed => 'Export failed',
+              };
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(msg)));
+            },
+          ),
+        ],
+      ),
       body: ListView(
         children: [
           SizedBox(
@@ -142,14 +167,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               ListTile(
                 onTap: () =>
                     showSessionEditor(context, ref, day: s.clockIn, session: s),
-                leading: Icon(s.clockOut == null
-                    ? Icons.timelapse
-                    : Icons.check_circle_outline),
+                leading: Icon(
+                  s.clockOut == null
+                      ? Icons.timelapse
+                      : Icons.check_circle_outline,
+                ),
                 title: Text(
-                    '${formatTime(s.clockIn)} → ${s.clockOut == null ? 'now' : formatTime(s.clockOut!)}'),
+                  '${formatTime(s.clockIn)} → ${s.clockOut == null ? 'now' : formatTime(s.clockOut!)}',
+                ),
                 trailing: Text(formatHm(sessionDuration(s, now))),
               ),
-              Padding(
+          Padding(
             padding: const EdgeInsets.all(16),
             child: OutlinedButton.icon(
               onPressed: () => showSessionEditor(context, ref, day: _selected),
@@ -162,4 +190,3 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 }
-

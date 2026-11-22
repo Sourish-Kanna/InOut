@@ -61,3 +61,4 @@ DayStatus dayStatus({
   if (total > Duration.zero) return DayStatus.short;
   return DayStatus.missed;
 }
+

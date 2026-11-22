@@ -111,8 +111,9 @@ class AppDatabase extends _$AppDatabase {
       if (!end.isAfter(start)) {
         throw SessionException('Clock-out must be after clock-in');
       }
-      if (end.isAfter(now))
-        {throw SessionException('Clock-out is in the future');}
+      if (end.isAfter(now)) {
+        throw SessionException('Clock-out is in the future');
+      }
       if (!_sameDay(start, end)) {
         throw SessionException('Session must end on the same day');
       }
@@ -149,4 +150,7 @@ class AppDatabase extends _$AppDatabase {
       throw SessionException('Overlaps another session');
     }
   }
+
+  Future<List<Session>> getAllSessions() =>
+      (select(sessions)..orderBy([(s) => OrderingTerm.asc(s.clockIn)])).get();
 }

@@ -12,10 +12,16 @@ final openSessionProvider = StreamProvider<Session?>((ref) {
   return ref.watch(databaseProvider).watchOpenSession();
 });
 
+/// Today's date at local midnight. Re-evaluates on every ticker tick,
+/// but only notifies dependents when the date actually changes.
+final todayProvider = Provider<DateTime>((ref) {
+  final now = ref.watch(tickerProvider).value ?? DateTime.now();
+  return DateTime(now.year, now.month, now.day);
+});
+
 final todaySessionsProvider = StreamProvider<List<Session>>((ref) {
-  final now = DateTime.now();
-  final start = DateTime(now.year, now.month, now.day);
-  final end = start.add(const Duration(days: 1));
+  final start = ref.watch(todayProvider);
+  final end = DateTime(start.year, start.month, start.day + 1);
   return ref.watch(databaseProvider).watchSessionsBetween(start, end);
 });
 
