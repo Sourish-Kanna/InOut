@@ -4,7 +4,18 @@ import '../data/app_database.dart';
 
 /// Duration of one session. Open session counts up to [now].
 Duration sessionDuration(Session s, DateTime now) {
-  final d = (s.clockOut ?? now).difference(s.clockIn);
+  if (s.clockOut == null) {
+    final sameDay =
+        s.clockIn.year == now.year &&
+        s.clockIn.month == now.month &&
+        s.clockIn.day == now.day;
+    if (!sameDay)
+      {return Duration.zero;} // stale open session, real length unknown
+    return now.difference(s.clockIn).isNegative
+        ? Duration.zero
+        : now.difference(s.clockIn);
+  }
+  final d = s.clockOut!.difference(s.clockIn);
   return d.isNegative ? Duration.zero : d;
 }
 

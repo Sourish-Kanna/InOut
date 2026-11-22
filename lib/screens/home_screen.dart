@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import '../data/app_database.dart';
 import '../providers/providers.dart';
 import '../utils/time_utils.dart';
+import '../widgets/session_editor.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -63,7 +64,25 @@ class HomeScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               FilledButton.icon(
-                onPressed: () => isIn ? db.punchOut() : db.punchIn(),
+                onPressed: () async {
+                  try {
+                    isIn ? await db.punchOut() : await db.punchIn();
+                  } on StaleSessionException catch (e) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text(e.message)));
+                    showSessionEditor(
+                      context,
+                      ref,
+                      day: open!.clockIn,
+                      session: open,
+                    );
+                  } on SessionException catch (e) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text(e.message)));
+                  }
+                },
                 icon: Icon(isIn ? Icons.logout : Icons.login),
                 label: Text(isIn ? 'Clock Out' : 'Clock In'),
                 style: FilledButton.styleFrom(
@@ -88,6 +107,12 @@ class HomeScreen extends ConsumerWidget {
                               ? 'now'
                               : formatTime(s.clockOut!);
                           return ListTile(
+                            onTap: () => showSessionEditor(
+                              context,
+                              ref,
+                              day: s.clockIn,
+                              session: s,
+                            ),
                             leading: Icon(
                               s.clockOut == null
                                   ? Icons.timelapse

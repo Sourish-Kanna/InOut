@@ -15,7 +15,6 @@ class InOutApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      builder: (context, child) => MaterialUiCompatibilityBridge(child: child!),
       home: const AppShell(),
     );
   }
