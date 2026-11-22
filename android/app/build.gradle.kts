@@ -1,13 +1,24 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Load keystore properties
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.sourish.in_out"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+    // val isTestBuild = System.getenv("TEST_BUILD") == "true"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -17,6 +28,7 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.sourish.in_out"
+        // if (isTestBuild) applicationIdSuffix = ".test"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -29,11 +41,44 @@ android {
         versionName = flutter.versionName
     }
 
+    flavorDimensions += "env"
+    productFlavors {
+        create("prod") {
+            dimension = "env"
+        }
+        create("beta") {
+            dimension = "env"
+            applicationIdSuffix = ".beta"
+            versionNameSuffix = "-beta"
+        }
+    }
+
+    signingConfigs {
+        create("release") {
+            val localStoreFilePath = keystoreProperties.getProperty("storeFile")
+            val finalStoreFilePath = if (localStoreFilePath != null) {
+                localStoreFilePath
+            } else {
+                "upload-keystore.jks"
+            }
+            storeFile = file(finalStoreFilePath)
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+                ?: keystoreProperties.getProperty("storePassword")
+            keyAlias = System.getenv("KEY_ALIAS")
+                ?: keystoreProperties.getProperty("keyAlias")
+            keyPassword = System.getenv("KEY_PASSWORD")
+                ?: keystoreProperties.getProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
+        }
+
+        getByName("debug") {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-dev"
         }
     }
 }
