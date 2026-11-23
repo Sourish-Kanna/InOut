@@ -1,46 +1,102 @@
+import 'dart:developer' as dev;
 import 'dart:io';
 
+import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
-import 'package:media_store_plus/media_store_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../data/app_database.dart';
 
-final _mediaStore = MediaStore();
+const _folderName = 'InOut';
 
-enum ExportResult { empty, saved, failed }
-
-String buildCsv(List<Session> sessions) {
-  final d = DateFormat('yyyy-MM-dd');
-  final t = DateFormat('HH:mm');
-  final b = StringBuffer('date,clock_in,clock_out,minutes\r\n');
-  for (final s in sessions) {
-    final out = s.clockOut;
-    final outStr = out == null ? '' : t.format(out);
-    final mins = out == null ? '' : '${out.difference(s.clockIn).inMinutes}';
-    b.write('${d.format(s.clockIn)},${t.format(s.clockIn)},$outStr,$mins\r\n');
-  }
-  return b.toString();
+class ExportResult {
+  const ExportResult({required this.file, required this.displayPath});
+  final File file;
+  final String displayPath;
 }
 
-/// Saves to Downloads/InOut/inout_YYYYMMDD_HHmm.csv
-Future<ExportResult> exportCsv(AppDatabase db) async {
+/// Downloads/InOut, created if missing. Same approach as ExpendiNote.
+Future<Directory> _exportDirectory() async {
+  Directory? base;
+
+  if (Platform.isAndroid) {
+    final publicDownloads = Directory('/storage/emulated/0/Download');
+    if (await publicDownloads.exists()) {
+      base = publicDownloads;
+    } else {
+      try {
+        base = await getDownloadsDirectory();
+      } catch (_) {}
+      base ??= await getExternalStorageDirectory();
+    }
+  } else {
+    try {
+      base = await getDownloadsDirectory();
+    } catch (_) {}
+    base ??= await getApplicationDocumentsDirectory();
+  }
+
+  if (base == null) {
+    throw const FileSystemException('Could not locate Downloads directory.');
+  }
+
+  final dir = Directory('${base.path}/$_folderName');
+  if (!await dir.exists()) await dir.create(recursive: true);
+  return dir;
+}
+
+/// Returns null when there is nothing to export. Throws on write failure.
+Future<ExportResult?> exportCsv(AppDatabase db) async {
   try {
     final sessions = await db.getAllSessions();
-    if (sessions.isEmpty) return ExportResult.empty;
+    if (sessions.isEmpty) return null;
 
-    final name =
-        'inout_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.csv';
-    final tmp = File('${(await getTemporaryDirectory()).path}/$name');
-    await tmp.writeAsString(buildCsv(sessions));
+    final dateFmt = DateFormat('yyyy-MM-dd');
+    final dayFmt = DateFormat('EEE');
+    final timeFmt = DateFormat('HH:mm');
 
-    final info = await _mediaStore.saveFile(
-      tempFilePath: tmp.path,
-      dirType: DirType.download,
-      dirName: DirName.download,
+    final rows = <List<dynamic>>[
+      [
+        'ID',
+        'Date',
+        'Day',
+        'Clock In',
+        'Clock Out',
+        'Minutes',
+        'Hours',
+        'Status',
+      ],
+    ];
+
+    for (final s in sessions) {
+      final out = s.clockOut;
+      final mins = out?.difference(s.clockIn).inMinutes;
+      rows.add([
+        s.id,
+        dateFmt.format(s.clockIn),
+        dayFmt.format(s.clockIn),
+        timeFmt.format(s.clockIn),
+        out == null ? '' : timeFmt.format(out),
+        mins ?? '',
+        mins == null ? '' : (mins / 60).toStringAsFixed(2),
+        out == null ? 'Open' : 'Completed',
+      ]);
+    }
+
+    final stamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+    final fileName = 'inout_sessions_$stamp.csv';
+
+    final dir = await _exportDirectory();
+    final file = File('${dir.path}/$fileName');
+    await file.writeAsString(csv.encode(rows));
+
+    dev.log('CSV export saved to ${file.path}', name: 'InOut');
+    return ExportResult(
+      file: file,
+      displayPath: 'Downloads/$_folderName/$fileName',
     );
-    return info == null ? ExportResult.failed : ExportResult.saved;
-  } catch (_) {
-    return ExportResult.failed;
+  } catch (e, st) {
+    dev.log('CSV export failed', error: e, stackTrace: st, name: 'InOut');
+    rethrow;
   }
 }

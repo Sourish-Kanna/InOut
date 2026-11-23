@@ -4,9 +4,9 @@ import 'package:material_ui/material_ui.dart';
 
 import '../data/app_database.dart';
 import '../providers/providers.dart';
+import '../utils/csv_export.dart';
 import '../utils/time_utils.dart';
 import '../widgets/session_editor.dart';
-import '../utils/csv_export.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -106,15 +106,23 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             icon: const Icon(Icons.download),
             tooltip: 'Export CSV',
             onPressed: () async {
-              final r = await exportCsv(ref.read(databaseProvider));
-              if (!context.mounted) return;
-              final msg = switch (r) {
-                ExportResult.saved => 'Saved to Downloads/InOut',
-                ExportResult.empty => 'Nothing to export yet',
-                ExportResult.failed => 'Export failed',
-              };
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text(msg)));
+              final messenger = ScaffoldMessenger.of(context);
+              try {
+                final r = await exportCsv(ref.read(databaseProvider));
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      r == null
+                          ? 'Nothing to export yet'
+                          : 'Saved to ${r.displayPath}',
+                    ),
+                  ),
+                );
+              } catch (_) {
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('Export failed')),
+                );
+              }
             },
           ),
         ],
