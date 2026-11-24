@@ -103,6 +103,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       borderRadius: BorderRadius.circular(12),
     );
 
+    DayStatus statusOf(DateTime d) {
+      final k = _key(d);
+      return dayStatus(
+        day: k,
+        total: totals[k] ?? Duration.zero,
+        now: now,
+        inProgress: openDays.contains(k),
+      );
+    }
+
+    Color fillFor(DateTime d) =>
+        _palette(statusOf(d), dark)?.$1 ?? Colors.transparent;
+
+    Color textFor(DateTime d) =>
+        _palette(statusOf(d), dark)?.$2 ?? scheme.onSurface;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Calendar'),
@@ -164,10 +180,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 ),
                 today: CalendarDayStyle(
                   shape: cellShape,
+                  backgroundColor: fillFor(now),
+                  textStyle: TextStyle(
+                    color: textFor(now),
+                    fontWeight: FontWeight.w600,
+                  ),
                   border: BorderSide(color: scheme.outline, width: 1.5),
                 ),
                 selected: CalendarDayStyle(
                   shape: cellShape,
+                  backgroundColor: fillFor(_selected),
+                  textStyle: TextStyle(
+                    color: textFor(_selected),
+                    fontWeight: FontWeight.w600,
+                  ),
                   border: BorderSide(color: scheme.primary, width: 2.5),
                 ),
               ),
@@ -194,13 +220,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               ),
               // status color per day
               dayStyleResolver: (context, day) {
-                final k = _key(day.date);
-                final status = dayStatus(
-                  day: k,
-                  total: totals[k] ?? Duration.zero,
-                  now: now,
-                  inProgress: openDays.contains(k),
-                );
+                final status = statusOf(day.date);
                 final c = _palette(status, dark);
                 if (c == null) return null;
                 return CalendarDayStyle(

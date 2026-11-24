@@ -16,12 +16,12 @@ Future<void> showSessionEditor(
   final base = DateTime(day.year, day.month, day.day);
 
   TimeOfDay inT = TimeOfDay.fromDateTime(
-    session?.clockIn ?? base.add(const Duration(hours: 9)),
+    session?.clockIn ?? base.add(const Duration(hours: 11)),
   );
   TimeOfDay? outT = session?.clockOut != null
       ? TimeOfDay.fromDateTime(session!.clockOut!)
       : (isNew
-            ? const TimeOfDay(hour: 18, minute: 0)
+            ? const TimeOfDay(hour: 20, minute: 0)
             : null); // null = still in
   String? error;
 
