@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 
 import '../data/app_database.dart';
 import '../providers/providers.dart';
@@ -24,6 +26,11 @@ class HomeScreen extends ConsumerWidget {
     final staleOpen = open != null && open.clockIn.isBefore(todayStart);
     final scheme = Theme.of(context).colorScheme;
 
+    final progress = (total.inMinutes / dailyTarget.inMinutes)
+        .clamp(0.0, 1.0)
+        .toDouble();
+    final remaining = dailyTarget - total;
+
     return Scaffold(
       appBar: AppBar(title: const Text('InOut')),
       body: SafeArea(
@@ -46,18 +53,46 @@ class HomeScreen extends ConsumerWidget {
                 ),
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Column(
                     children: [
                       Text(
-                        'Today',
+                        DateFormat('EEEE, d MMM').format(now),
                         style: Theme.of(context).textTheme.labelLarge,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        formatHm(total),
-                        style: Theme.of(context).textTheme.displayMedium,
+                      const SizedBox(height: 12),
+                      CircularPercentIndicator(
+                        radius: 85, // 170 px wide
+                        lineWidth: 12,
+                        percent: progress, // 0.0 to 1.0, already clamped
+                        animation: true,
+                        animateFromLastPercent: true,
+                        animationDuration: 600,
+                        circularStrokeCap: CircularStrokeCap.round,
+                        backgroundColor: scheme.surfaceContainerHighest,
+                        progressColor: progress >= 1
+                            ? Colors.green
+                            : scheme.secondary,
+                        center: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              formatHm(total),
+                              style: Theme.of(context).textTheme.headlineMedium,
+                            ),
+                            Text(
+                              remaining > Duration.zero
+                                  ? '${formatHm(remaining)} left'
+                                  : 'Target met',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
                       ),
+                      if (open != null && !staleOpen) ...[
+                        const SizedBox(height: 12),
+                        Text('In since ${formatTime(open.clockIn)}'),
+                      ],
                     ],
                   ),
                 ),
@@ -88,8 +123,8 @@ class HomeScreen extends ConsumerWidget {
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(64),
                   textStyle: const TextStyle(fontSize: 20),
-                  backgroundColor: isIn ? scheme.tertiary : scheme.primary,
-                  foregroundColor: isIn ? scheme.onTertiary : scheme.onPrimary,
+                  backgroundColor: isIn ? scheme.secondary : scheme.primary,
+                  foregroundColor: isIn ? scheme.onSecondary : scheme.onPrimary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -107,12 +142,6 @@ class HomeScreen extends ConsumerWidget {
                               ? 'now'
                               : formatTime(s.clockOut!);
                           return ListTile(
-                            onTap: () => showSessionEditor(
-                              context,
-                              ref,
-                              day: s.clockIn,
-                              session: s,
-                            ),
                             leading: Icon(
                               s.clockOut == null
                                   ? Icons.timelapse
@@ -120,6 +149,12 @@ class HomeScreen extends ConsumerWidget {
                             ),
                             title: Text('${formatTime(s.clockIn)} → $out'),
                             trailing: Text(formatHm(sessionDuration(s, now))),
+                            onTap: () => showSessionEditor(
+                              context,
+                              ref,
+                              day: s.clockIn,
+                              session: s,
+                            ),
                           );
                         },
                       ),
