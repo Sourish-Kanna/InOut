@@ -2,15 +2,15 @@
 
 ![Flutter](https://img.shields.io/badge/Flutter-3.50-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.14-0175C2?logo=dart&logoColor=white)
-![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-3DDC84?logo=android&logoColor=white)
 ![Storage](https://img.shields.io/badge/Storage-SQLite%20(Drift)-003B57?logo=sqlite&logoColor=white)
 ![Local only](https://img.shields.io/badge/Backend-none-lightgrey)
 
 > **A personal office punch in/out tracker: tap to clock in, tap to clock out, and see your hours by day and month.**
 
-InOut is a local-only Flutter app for tracking how long you spend in the office. It records the device time when you clock in and out, adds up your sessions per day, and shows the result in a color-coded calendar with a monthly total. It has no backend, no account and no network access. Everything stays on your phone.
+InOut is a local-only Flutter app for tracking how long you spend in the office. It records the device time when you clock in and out, adds up your sessions per day, and shows the result in a color-coded calendar with a monthly total. It has no backend, no account and no network access. Everything stays on your device.
 
-It is built for one person: me, tracking my own office hours.
+It is built for one person: tracking office hours reliably across Android and iOS.
 
 ---
 
@@ -38,7 +38,7 @@ Design constraints:
 - **Calendar view** with hours per day and color coding
 - **Monthly total** that follows the visible month
 - **Add, edit and delete sessions** manually
-- **CSV export** straight to `Downloads/InOut/`
+- **CSV export** straight to `Downloads/InOut/` (Android) or `Documents/InOut/` (iOS - accessible via the Apple Files app)
 - Light and dark themes
 
 ### Data / Integrity / UX / Reliability
@@ -130,12 +130,12 @@ lib/
 │   └── session_editor.dart    # Add / edit / delete dialog
 └── utils/
     ├── time_utils.dart        # Durations, daily totals, day status rules
-    └── csv_export.dart        # CSV builder and Downloads writer
+    └── csv_export.dart        # CSV builder and platform file writer
 ```
 
 ### CSV export
 
-Saved to `Downloads/InOut/inout_sessions_<timestamp>.csv`:
+Saved to `Downloads/InOut/` (Android) or `Documents/InOut/` (iOS) as `inout_sessions_<timestamp>.csv`:
 
 ```csv
 ID,Date,Day,Clock In,Clock Out,Minutes,Hours,Status
@@ -148,35 +148,60 @@ An unfinished session has an empty clock-out and is marked `Open`.
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started & Build Instructions
 
 ### Prerequisites
 
-- Flutter 3.50.0 (Dart 3.14)
-- An Android device or emulator
+- Flutter SDK (version `3.50.0` or higher, with Dart `^3.14.0`)
+- Android Studio / Xcode (for Android and iOS development)
+- Connected device or emulator (`flutter devices` to list available targets)
 
-### Setup
+### Setup & Code Generation
 
 ```bash
-# Clone
+# Clone repository
 git clone https://github.com/Sourish-Kanna/InOut.git
-cd InOut
+cd in_out
 
 # Install dependencies
 flutter pub get
 
-# Generate Drift database code
-dart run build_runner build
-
-# Run locally
-flutter run
+# Generate Drift database code (AppDatabase and tables)
+dart run build_runner build --delete-conflicting-outputs
 ```
 
-Optional, to regenerate the app icon and launcher name:
+---
+
+## 🎛 Product Flavors
+
+The project is configured with two product flavors (`prod` and `beta`):
+- **`prod`**: Standard production flavor (`com.sourish.in_out`).
+- **`beta`**: Beta flavor (`com.sourish.in_out.beta`, with `-beta` version suffix and `.beta` application ID suffix).
+
+### Running with Flavors
 
 ```bash
-dart run flutter_launcher_icons
-dart run launcher_name:main
+# List connected devices
+flutter devices
+
+# Run Production flavor on connected device/emulator
+flutter run --flavor prod -d <device-id>
+
+# Run Beta flavor on connected device/emulator
+flutter run --flavor beta -d <device-id>
+```
+
+### Building Release Packages
+
+```bash
+# Build release APK for Production flavor
+flutter build apk --flavor prod
+
+# Build release APK for Beta flavor
+flutter build apk --flavor beta
+
+# Build App Bundle for Play Store (Production)
+flutter build appbundle --flavor prod
 ```
 
 ---
