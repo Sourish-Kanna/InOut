@@ -156,133 +156,143 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           ),
         ],
       ),
-      body: ListView(
-        children: [
-          SizedBox(
-            height: 460,
-            child: CalendarCarousel<Duration>.month(
-              selectedDate: _selected,
-              focusedDate: _focused,
-              firstDayOfWeek: CalendarWeekday.monday,
-              header: const CalendarHeaderConfig(enableDatePicker: true),
-              layout: const CalendarLayoutConfig(
-                showOutsideDays: false,
-                dayAspectRatio: 0.8, // taller cells: number + hours
-                dayPadding: 2,
-              ),
-              theme: CalendarCarouselThemeData(
-                day: CalendarDayStyle(
-                  shape: cellShape,
-                  alignment: const Alignment(0, -0.35),
-                ),
-                weekend: CalendarDayStyle(
-                  textStyle: TextStyle(color: scheme.onSurfaceVariant),
-                ),
-                today: CalendarDayStyle(
-                  shape: cellShape,
-                  backgroundColor: fillFor(now),
-                  textStyle: TextStyle(
-                    color: textFor(now),
-                    fontWeight: FontWeight.w600,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: ListView(
+            children: [
+              SizedBox(
+                height: 460,
+                child: CalendarCarousel<Duration>.month(
+                  selectedDate: _selected,
+                  focusedDate: _focused,
+                  firstDayOfWeek: CalendarWeekday.sunday,
+                  header: const CalendarHeaderConfig(enableDatePicker: true),
+                  layout: const CalendarLayoutConfig(
+                    showOutsideDays: false,
+                    dayAspectRatio: 0.8, // taller cells: number + hours
+                    dayPadding: 2,
                   ),
-                  border: BorderSide(color: scheme.outline, width: 1.5),
-                ),
-                selected: CalendarDayStyle(
-                  shape: cellShape,
-                  backgroundColor: fillFor(_selected),
-                  textStyle: TextStyle(
-                    color: textFor(_selected),
-                    fontWeight: FontWeight.w600,
-                  ),
-                  border: BorderSide(color: scheme.primary, width: 2.5),
-                ),
-              ),
-              // hours per day, passed to the calendar as the day's "event"
-              eventsForDate: (date) {
-                final t = totals[_key(date)];
-                return (t == null || t == Duration.zero)
-                    ? const <Duration>[]
-                    : <Duration>[t];
-              },
-              markerBuilder: (context, day) => Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Text(
-                    formatHm(day.events.first),
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w600,
-                      color: day.style.textStyle?.color,
+                  theme: CalendarCarouselThemeData(
+                    day: CalendarDayStyle(
+                      shape: cellShape,
+                      alignment: const Alignment(0, -0.35),
+                    ),
+                    weekend: CalendarDayStyle(
+                      textStyle: TextStyle(color: scheme.onSurfaceVariant),
+                    ),
+                    today: CalendarDayStyle(
+                      shape: cellShape,
+                      backgroundColor: fillFor(now),
+                      textStyle: TextStyle(
+                        color: textFor(now),
+                        fontWeight: FontWeight.w600,
+                      ),
+                      border: BorderSide(color: scheme.outline, width: 1.5),
+                    ),
+                    selected: CalendarDayStyle(
+                      shape: cellShape,
+                      backgroundColor: fillFor(_selected),
+                      textStyle: TextStyle(
+                        color: textFor(_selected),
+                        fontWeight: FontWeight.w600,
+                      ),
+                      border: BorderSide(color: scheme.primary, width: 2.5),
                     ),
                   ),
+                  // hours per day, passed to the calendar as the day's "event"
+                  eventsForDate: (date) {
+                    final t = totals[_key(date)];
+                    return (t == null || t == Duration.zero)
+                        ? const <Duration>[]
+                        : <Duration>[t];
+                  },
+                  markerBuilder: (context, day) => Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        formatHm(day.events.first),
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          color: day.style.textStyle?.color,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // status color per day
+                  dayStyleResolver: (context, day) {
+                    final status = statusOf(day.date);
+                    final c = _palette(status, dark);
+                    if (c == null) return null;
+                    return CalendarDayStyle(
+                      backgroundColor: c.$1,
+                      textStyle: (day.style.textStyle ?? const TextStyle())
+                          .copyWith(color: c.$2, fontWeight: FontWeight.w600),
+                    );
+                  },
+                  onDateSelected: (date, _) => setState(() {
+                    _selected = date;
+                    _focused = date;
+                  }),
+                  onPageChanged: (anchor) => setState(() => _focused = anchor),
                 ),
               ),
-              // status color per day
-              dayStyleResolver: (context, day) {
-                final status = statusOf(day.date);
-                final c = _palette(status, dark);
-                if (c == null) return null;
-                return CalendarDayStyle(
-                  backgroundColor: c.$1,
-                  textStyle: (day.style.textStyle ?? const TextStyle())
-                      .copyWith(color: c.$2, fontWeight: FontWeight.w600),
-                );
-              },
-              onDateSelected: (date, _) => setState(() {
-                _selected = date;
-                _focused = date;
-              }),
-              onPageChanged: (anchor) => setState(() => _focused = anchor),
-            ),
-          ),
-          _legend(dark),
-          Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: ListTile(
-              title: const Text('Month total'),
-              trailing: Text(
-                formatHm(monthTotal),
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Text(
-              '${_selected.day}/${_selected.month}/${_selected.year}',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-          if (daySessions.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('No sessions'),
-            )
-          else
-            for (final s in daySessions)
-              ListTile(
-                leading: Icon(
-                  s.clockOut == null
-                      ? Icons.timelapse
-                      : Icons.check_circle_outline,
+              _legend(dark),
+              Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: ListTile(
+                  title: const Text('Month total'),
+                  trailing: Text(
+                    formatHm(monthTotal),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                 ),
-                title: Text(
-                  '${formatTime(s.clockIn)} → ${s.clockOut == null ? 'now' : formatTime(s.clockOut!)}',
-                ),
-                trailing: Text(formatHm(sessionDuration(s, now))),
-                onTap: () =>
-                    showSessionEditor(context, ref, day: s.clockIn, session: s),
               ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: OutlinedButton.icon(
-              onPressed: () => showSessionEditor(context, ref, day: _selected),
-              icon: const Icon(Icons.add),
-              label: const Text('Add session'),
-            ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Text(
+                  '${_selected.day}/${_selected.month}/${_selected.year}',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              if (daySessions.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text('No sessions'),
+                )
+              else
+                for (final s in daySessions)
+                  ListTile(
+                    leading: Icon(
+                      s.clockOut == null
+                          ? Icons.timelapse
+                          : Icons.check_circle_outline,
+                    ),
+                    title: Text(
+                      '${formatTime(s.clockIn)} → ${s.clockOut == null ? 'now' : formatTime(s.clockOut!)}',
+                    ),
+                    trailing: Text(formatHm(sessionDuration(s, now))),
+                    onTap: () => showSessionEditor(
+                      context,
+                      ref,
+                      day: s.clockIn,
+                      session: s,
+                    ),
+                  ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: OutlinedButton.icon(
+                  onPressed: () =>
+                      showSessionEditor(context, ref, day: _selected),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add session'),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

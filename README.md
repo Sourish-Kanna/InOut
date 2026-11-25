@@ -1,23 +1,30 @@
 # InOut ⏱️
 
-<!-- Badges -->
-[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=flat&logo=Flutter&logoColor=white)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-%230175C2.svg?style=flat&logo=Dart&logoColor=white)](https://dart.dev)
-[![Drift](https://img.shields.io/badge/Drift-SQLite-blue)](https://drift.simonbinder.eu/)
+![Flutter](https://img.shields.io/badge/Flutter-3.50-02569B?logo=flutter&logoColor=white)
+![Dart](https://img.shields.io/badge/Dart-3.14-0175C2?logo=dart&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
+![Storage](https://img.shields.io/badge/Storage-SQLite%20(Drift)-003B57?logo=sqlite&logoColor=white)
+![Local only](https://img.shields.io/badge/Backend-none-lightgrey)
 
-> **A privacy-first, local-only Flutter application for tracking work hours, punch-in/punch-out sessions, daily targets, and monthly total hours.**
+> **A personal office punch in/out tracker: tap to clock in, tap to clock out, and see your hours by day and month.**
 
-InOut is responsible for managing office attendance and shift tracking completely offline. It provides users with a frictionless way to monitor daily work durations against targets, visualize historical attendance on an interactive calendar, review monthly totals, and export session logs without relying on external cloud infrastructure or user accounts.
+InOut is a local-only Flutter app for tracking how long you spend in the office. It records the device time when you clock in and out, adds up your sessions per day, and shows the result in a color-coded calendar with a monthly total. It has no backend, no account and no network access. Everything stays on your phone.
+
+It is built for one person: me, tracking my own office hours.
 
 ---
 
 ## 📖 Context
 
-> *Manual time tracking on spreadsheets or subscription-based SaaS tools often introduces privacy risks, unnecessary cloud dependencies, and friction.*
+> *Office hours add up quietly, and a spreadsheet is too much effort to keep daily.*
 
-- Solves the real-world problem of personal office hour tracking with absolute data ownership.
-- Exists as a standalone, zero-config mobile and desktop application.
-- Designed with strict offline-first and local storage constraints to ensure privacy and reliability.
+I wanted a one-tap way to record in and out times, without maintaining a sheet or trusting my memory at the end of the month. The app is deliberately small: two actions, one calendar, one total.
+
+Design constraints:
+
+- **Personal use only**, so no server, login or sync
+- **Device time is trusted**, because this is a self-tracker and not an attendance system
+- **Day shifts only**, so a session must start and end on the same day
 
 ---
 
@@ -25,48 +32,66 @@ InOut is responsible for managing office attendance and shift tracking completel
 
 ### Core Capabilities
 
-- **One-Tap Punch Clock**: Seamless clock in and out from the home dashboard with real-time live ticker updates.
-- **Interactive Calendar View**: Monthly calendar display with color-coded day statuses (9h+ target met, 6-9h partial, under 6h short, missed, and in-progress).
-- **Monthly Work Totals**: Cumulative monthly hour summaries calculated automatically.
-- **CSV Data Export**: Cross-platform data export (Android, iOS, Web) for easy reporting and record-keeping.
+- One-tap **Clock In / Clock Out** with the current device time
+- **Multiple sessions per day** (lunch breaks, stepping out)
+- **Live daily total** with a progress ring toward a fixed **9 hour** target
+- **Calendar view** with hours per day and color coding
+- **Monthly total** that follows the visible month
+- **Add, edit and delete sessions** manually
+- **CSV export** straight to `Downloads/InOut/`
+- Light and dark themes
 
 ### Data / Integrity / UX / Reliability
 
-- **Strict Session Validation**: Database-level checks preventing session overlaps, future timestamps, and inverted intervals.
-- **Stale Session Recovery**: Automatic detection and prompt resolution for unclosed shifts carried over from previous days.
-- **Reactive State Management**: Powered by Flutter Riverpod and Drift reactive SQLite streams for instant UI updates.
-- **Material 3 Theming**: Dynamic light and dark theme support adapted to system preferences.
+- An open session survives the app being killed or the phone restarting
+- Overlapping sessions, future times, and clock-out before clock-in are rejected
+- A session left open from an earlier day is flagged, and clocking out opens the editor so you can enter the real time
+- Weekends are never marked as missed, but hours logged on them still count
+- Data stays on the device. Uninstalling the app deletes it, so use CSV export as a backup
+
+### Calendar Colors (Mon-Fri)
+
+| Color | Meaning |
+|---|---|
+| 🟩 Green | 9h or more |
+| 🟨 Amber | 6h to under 9h |
+| 🟥 Red | Under 6h |
+| 🩷 Pale red | Past weekday with no hours |
+| 🟦 Blue | Clocked in right now |
 
 ---
 
 ## 🧠 Engineering Highlights
 
-Explain the important design decisions, implementation details, or trade-offs relevant to this project.
+### 1. An open session is just a `NULL` clock-out
 
-### 1. Reactive SQLite Architecture with Drift
+The `sessions` table has three columns: `id`, `clock_in`, and a nullable `clock_out`. "Currently clocked in" is simply "a row with no clock-out". There is no separate flag to drift out of sync, and the state survives restarts for free.
 
-Using Drift combined with Flutter Riverpod streams ensures the UI remains fully synchronized with database mutations without manual polling or state boilerplate.
+### 2. Validation lives in the database layer
 
-### 2. Transactional Business Rule Validation
+Punching, adding and editing all go through the same checks inside a single transaction (overlap, same-day, future times, one open session at a time). The UI can't skip a rule, and a check-then-write can't be interleaved with another write.
 
-All punch-in, punch-out, and session modification operations are wrapped in database transactions with strict constraint validation to maintain absolute time integrity.
+### 3. Derived data is never stored
 
-### 3. Cross-Platform Export Abstraction
+Daily totals, month totals and calendar colors are computed from the sessions. One Drift `watch()` query per month feeds the calendar cells, the month total and the day list through Riverpod stream providers, so they cannot disagree.
 
-Platform-specific export helpers isolate I/O and web download behaviors, allowing uniform CSV generation across mobile, desktop, and web targets.
+### 4. Honest handling of forgotten clock-outs
+
+A session left open on a past day counts as zero hours until it is corrected, instead of silently inflating the day to 20+ hours. The Home screen shows a warning, and the calendar marks that day so it can be fixed.
+
+### 5. Ready-made packages, chosen for Flutter 3.50
+
+Flutter 3.50 splits Material into a separate `material_ui` package. `table_calendar` still depends on the old library and failed at runtime, so the calendar uses `flutter_calendar_carousel`, driven through its own theme, style resolver and marker APIs rather than custom cell widgets.
 
 ---
 
 ## 🧑‍💼 What This Project Demonstrates
 
-This repository demonstrates:
-
-- Local-first database design using Drift and SQLite in Flutter.
-- Reactive state management architecture with Flutter Riverpod.
-- Advanced calendar customisation and date/time manipulation in mobile apps.
-- Robust validation strategies for time-sensitive productivity applications.
-
-> Keep this factual and specific to the project.
+- Reactive UI driven by database streams (Drift `watch()` + Riverpod)
+- Data integrity rules enforced at the persistence layer
+- Designing for real-world mistakes, such as forgotten clock-outs and device clock changes
+- Making dependency decisions under a framework migration (the Flutter 3.50 Material split)
+- Keeping scope small: no backend, no accounts, no feature creep
 
 ---
 
@@ -74,29 +99,52 @@ This repository demonstrates:
 
 ### Core
 
-- **Language**: Dart (`^3.14.0`)
-- **Framework**: Flutter
-- **UI Toolkit**: Material 3
+- **Dart / Flutter** 3.50
+- **Riverpod** for state management
+- **Drift** (SQLite) for local storage
 
-### Cloud / Data / Tooling
+### Packages
 
-- **Database**: Drift (`drift`, `drift_flutter`) / SQLite
-- **State Management**: Flutter Riverpod (`flutter_riverpod`)
-- **UI Components**: `percent_indicator`, `flutter_calendar_carousel`
-- **Export & Utils**: `csv`, `intl`, `path_provider`, `web`
-
-🔗 Related Repositories *(if any)*:
-
-- None (Standalone client application)
+- `material_ui`: Material widgets (Flutter 3.50 split)
+- `flutter_calendar_carousel`: calendar grid
+- `percent_indicator`: daily progress ring
+- `csv`, `path_provider`, `intl`: export and formatting
+- `flutter_launcher_icons`, `launcher_name`: app icon and name
 
 ---
 
-## 📡 API / Architecture / Usage *(Optional)*
+## 🗂 Architecture
 
-Explain:
+```
+lib/
+├── main.dart                  # App + light/dark theme (deepPurple seed, orange accent)
+├── data/
+│   └── app_database.dart      # Drift table, queries, validation rules
+├── providers/
+│   └── providers.dart         # Riverpod stream providers (open session, today, month)
+├── screens/
+│   ├── app_shell.dart         # Bottom navigation
+│   ├── home_screen.dart       # Clock button, progress ring, today's sessions
+│   └── calendar_screen.dart   # Calendar, month total, day sessions, CSV export
+├── widgets/
+│   └── session_editor.dart    # Add / edit / delete dialog
+└── utils/
+    ├── time_utils.dart        # Durations, daily totals, day status rules
+    └── csv_export.dart        # CSV builder and Downloads writer
+```
 
-- Public interfaces, data models (`Sessions` table), and database repository methods (`punchIn`, `punchOut`, `addSession`, `updateSession`).
-- Reactive streams (`watchOpenSession`, `watchSessionsBetween`).
+### CSV export
+
+Saved to `Downloads/InOut/inout_sessions_<timestamp>.csv`:
+
+```csv
+ID,Date,Day,Clock In,Clock Out,Minutes,Hours,Status
+12,2026-11-18,Wed,09:05,13:00,235,3.92,Completed
+13,2026-11-18,Wed,14:00,18:30,270,4.50,Completed
+14,2026-11-19,Thu,09:10,,,,Open
+```
+
+An unfinished session has an empty clock-out and is marked `Open`.
 
 ---
 
@@ -104,59 +152,53 @@ Explain:
 
 ### Prerequisites
 
-- Flutter SDK (compatible with Dart `^3.14.0`)
-- Android Studio / VS Code with Flutter & Dart extensions
+- Flutter 3.50.0 (Dart 3.14)
+- An Android device or emulator
 
 ### Setup
 
 ```bash
 # Clone
-git clone <repo-url>
-cd in_out
+git clone https://github.com/Sourish-Kanna/InOut.git
+cd InOut
 
 # Install dependencies
 flutter pub get
 
-# Generate database code (Drift)
-dart run build_runner build --delete-conflicting-outputs
+# Generate Drift database code
+dart run build_runner build
 
 # Run locally
 flutter run
+```
+
+Optional, to regenerate the app icon and launcher name:
+
+```bash
+dart run flutter_launcher_icons
+dart run launcher_name:main
 ```
 
 ---
 
 ## 🌿 Project Status
 
-- **Current state**: Stable & Active
-- **Known limitations**: Local storage only (no cloud synchronization by design).
+- **Current state:** active, personal use
+- **Known limitations:**
+  - Android is the target platform
+  - No night shifts: a session cannot cross midnight
+  - Device time is trusted, so changing the phone clock changes the data
+  - No in-app backup or restore, only CSV export (no import yet)
+  - No automated tests
 
 ---
 
-## ⚠️ Disclaimer *(Optional)*
+## ⚠️ Disclaimer
 
-- Intended use: Personal productivity and office time tracking.
-- No SLA or cloud guarantees; data resides entirely on the local device.
-
----
-
-## 🤝 Contributing *(Optional)*
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 📄 License *(Optional)*
-
-MIT License  
-*(subject to personal project terms)*
+A personal project for tracking my own hours. It is not an attendance or payroll system, and it comes with no guarantees. Your data lives only on your device.
 
 ---
 
 <div align="center">
-  <small>Built with Flutter & Drift for effortless time tracking.</small>
+  <small>Two taps a day. Everything else is calculated.</small>
 </div>

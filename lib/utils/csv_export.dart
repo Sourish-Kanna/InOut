@@ -15,7 +15,6 @@ class ExportResult {
   final String displayPath;
 }
 
-/// Downloads/InOut, created if missing. Same approach as ExpendiNote.
 Future<Directory> _exportDirectory() async {
   Directory? base;
 
@@ -29,6 +28,8 @@ Future<Directory> _exportDirectory() async {
       } catch (_) {}
       base ??= await getExternalStorageDirectory();
     }
+  } else if (Platform.isIOS) {
+    base = await getApplicationDocumentsDirectory();
   } else {
     try {
       base = await getDownloadsDirectory();
@@ -37,7 +38,7 @@ Future<Directory> _exportDirectory() async {
   }
 
   if (base == null) {
-    throw const FileSystemException('Could not locate Downloads directory.');
+    throw const FileSystemException('Could not locate storage directory.');
   }
 
   final dir = Directory('${base.path}/$_folderName');
@@ -91,9 +92,14 @@ Future<ExportResult?> exportCsv(AppDatabase db) async {
     await file.writeAsString(csv.encode(rows));
 
     dev.log('CSV export saved to ${file.path}', name: 'InOut');
+
+    final displayLocation = Platform.isIOS
+        ? 'Documents/$_folderName/$fileName'
+        : 'Downloads/$_folderName/$fileName';
+
     return ExportResult(
       file: file,
-      displayPath: 'Downloads/$_folderName/$fileName',
+      displayPath: displayLocation,
     );
   } catch (e, st) {
     dev.log('CSV export failed', error: e, stackTrace: st, name: 'InOut');
