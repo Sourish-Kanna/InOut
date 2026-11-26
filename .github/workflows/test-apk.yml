@@ -1,0 +1,56 @@
+name: Build Test APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test-apk:
+    name: Build Test APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          flutter-version-file: pubspec.yaml
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+          test -s android/app/upload-keystore.jks || { echo "::error::Keystore missing or empty"; exit 1; }
+
+      - name: Build APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: flutter build apk --flavor beta --release --target-platform android-arm64 --build-number ${{ github.run_number }}
+
+      - name: Rename APK
+        run: |
+          mkdir -p build/test-apk
+          cp build/app/outputs/flutter-apk/app-beta-release.apk \
+            build/test-apk/InOut-Test.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: InOut-Test-APK
+          path: build/test-apk/InOut-Test.apk
+          if-no-files-found: error
+          archive: false

@@ -1,0 +1,82 @@
+name: Build and Release
+
+on:
+  release:
+    types: [released, prereleased]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Analyze & Test
+    uses: ./.github/workflows/flutter-check.yml
+
+  android-release:
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v7
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          flutter-version-file: pubspec.yaml
+
+      - name: 🔐 Decode keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+          test -s android/app/upload-keystore.jks || { echo "::error::Keystore missing or empty"; exit 1; }
+
+      - name: 📱 Build signed APK (arm64)
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          flutter build apk --flavor prod --split-per-abi --target-platform android-arm64 --release \
+            --build-name "${TAG#v}" --build-number "${{ github.run_number }}"
+
+      - name: ✏️ Rename APK
+        run: |
+          DIR=build/app/outputs/flutter-apk
+          mv "$DIR/app-arm64-v8a-prod-release.apk" "$DIR/InOut-${TAG}-arm64.apk"
+
+      - name: 🚀 Upload to GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: build/app/outputs/flutter-apk/InOut-*.apk
+          fail_on_unmatched_files: true
+
+  notify:
+    needs: [verify, android-release]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📢 Send Discord Notification
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: ${{ (needs.verify.result == 'success' && needs.android-release.result == 'success') && 'success' || (contains(needs.*.result, 'cancelled') && 'cancelled' || 'failure') }}
+          nodetail: true
+          title: "InOut ${{ github.event.release.tag_name }}"
+          description: |
+            **Repo:** ${{ github.repository }}
+            **Workflow:** ${{ github.workflow }}
+            **Triggered by:** ${{ github.actor }}
+            
+            **Analyze & Test:** ${{ needs.verify.result }}
+            **Android Build:** ${{ needs.android-release.result }}
+            
+            [Download release](${{ github.event.release.html_url }})
+            [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          color: ${{ (needs.verify.result == 'success' && needs.android-release.result == 'success') && '0x2ecc71' || (contains(needs.*.result, 'cancelled') && '0x95a5a6' || '0xe74c3c') }}
+          url: ${{ github.event.release.html_url }}

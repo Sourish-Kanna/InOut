@@ -53,7 +53,7 @@ Design constraints:
 ### Calendar Colors (Mon-Fri)
 
 | Color | Meaning |
-|---|---|
+| --- | --- |
 | 🟩 Green | 9h or more |
 | 🟨 Amber | 6h to under 9h |
 | 🟥 Red | Under 6h |
@@ -122,7 +122,7 @@ Flutter 3.50 splits Material into a separate `material_ui` package. `table_calen
 
 ## 🗂 Architecture
 
-```
+``` text
 lib/
 ├── main.dart                  # App + light/dark theme (deepPurple seed, orange accent)
 ├── data/
@@ -183,6 +183,7 @@ dart run build_runner build --delete-conflicting-outputs
 ## 🎛 Product Flavors
 
 The project is configured with two product flavors (`prod` and `beta`):
+
 - **`prod`**: Standard production flavor (`com.sourish.in_out`).
 - **`beta`**: Beta flavor (`com.sourish.in_out.beta`, with `-beta` version suffix and `.beta` application ID suffix).
 
