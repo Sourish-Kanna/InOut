@@ -2,6 +2,7 @@ import 'package:flutter_calendar_carousel/flutter_calendar_carousel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../widgets/day_summary.dart';
 import '../data/app_database.dart';
 import '../providers/providers.dart';
 import '../utils/csv_export.dart';
@@ -70,9 +71,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       spacing: 12,
       runSpacing: 6,
       children: [
-        _legendChip(_palette(DayStatus.met, dark)!.$1, '9h+'),
-        _legendChip(_palette(DayStatus.partial, dark)!.$1, '6-9h'),
-        _legendChip(_palette(DayStatus.short, dark)!.$1, 'under 6h'),
+        _legendChip(
+          _palette(DayStatus.met, dark)!.$1,
+          '${dailyTarget.inHours}h+',
+        ),
+        _legendChip(
+          _palette(DayStatus.partial, dark)!.$1,
+          '${partialThreshold.inHours}-${dailyTarget.inHours}h',
+        ),
+        _legendChip(
+          _palette(DayStatus.short, dark)!.$1,
+          'under ${partialThreshold.inHours}h',
+        ),
         _legendChip(_palette(DayStatus.missed, dark)!.$1, 'missed'),
         _legendChip(_palette(DayStatus.inProgress, dark)!.$1, 'in progress'),
       ],
@@ -256,6 +266,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   '${_selected.day}/${_selected.month}/${_selected.year}',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: DaySummaryRow(summary: daySummary(daySessions, now)),
               ),
               if (daySessions.isEmpty)
                 const Padding(

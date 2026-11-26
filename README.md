@@ -34,8 +34,9 @@ Design constraints:
 
 - One-tap **Clock In / Clock Out** with the current device time
 - **Multiple sessions per day** (lunch breaks, stepping out)
-- **Live daily total** with a progress ring toward a fixed **9 hour** target
-- **Calendar view** with hours per day and color coding
+- **Live daily total** with a progress ring toward a fixed **8 hour** target
+- **First in, last out and the span between them** for any day
+- **Calendar view** (Sunday-first) with hours per day and color coding
 - **Monthly total** that follows the visible month
 - **Add, edit and delete sessions** manually
 - **CSV export** straight to `Downloads/InOut/` (Android) or `Documents/InOut/` (iOS - accessible via the Apple Files app)
@@ -59,6 +60,12 @@ Design constraints:
 | 🩷 Pale red | Past weekday with no hours |
 | 🟦 Blue | Clocked in right now |
 
+Today is colored by the hours logged so far, and turns blue only while a session is running.
+
+### First in / last out
+
+Each day shows three values: the first clock-in, the last clock-out, and the span between them. The span includes breaks, so it is not the same as worked time. While you are still clocked in, "last out" reads *still in* and the span counts up to now.
+
 ---
 
 ## 🧠 Engineering Highlights
@@ -73,11 +80,11 @@ Punching, adding and editing all go through the same checks inside a single tran
 
 ### 3. Derived data is never stored
 
-Daily totals, month totals and calendar colors are computed from the sessions. One Drift `watch()` query per month feeds the calendar cells, the month total and the day list through Riverpod stream providers, so they cannot disagree.
+Daily totals, month totals, first-in/last-out and calendar colors are computed from the sessions. One Drift `watch()` query per month feeds the calendar cells, the month total and the day list through Riverpod stream providers, so they cannot disagree.
 
 ### 4. Honest handling of forgotten clock-outs
 
-A session left open on a past day counts as zero hours until it is corrected, instead of silently inflating the day to 20+ hours. The Home screen shows a warning, and the calendar marks that day so it can be fixed.
+A session left open on a past day counts as zero hours until it is corrected, instead of silently inflating the day to 20+ hours. The Home screen shows a warning, the calendar marks that day, and the day's span is left blank until it is fixed.
 
 ### 5. Ready-made packages, chosen for Flutter 3.50
 
@@ -127,10 +134,11 @@ lib/
 │   ├── home_screen.dart       # Clock button, progress ring, today's sessions
 │   └── calendar_screen.dart   # Calendar, month total, day sessions, CSV export
 ├── widgets/
-│   └── session_editor.dart    # Add / edit / delete dialog
+│   ├── session_editor.dart    # Add / edit / delete dialog
+│   └── day_summary.dart       # First in / last out / span row
 └── utils/
-    ├── time_utils.dart        # Durations, daily totals, day status rules
-    └── csv_export.dart        # CSV builder and platform file writer
+    ├── time_utils.dart        # Durations, daily totals, day status, day summary
+    └── csv_export.dart        # CSV builder and Downloads writer
 ```
 
 ### CSV export
