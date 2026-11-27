@@ -2,13 +2,13 @@
 
 ![Flutter](https://img.shields.io/badge/Flutter-3.50-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.14-0175C2?logo=dart&logoColor=white)
-![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-3DDC84?logo=android&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
 ![Storage](https://img.shields.io/badge/Storage-SQLite%20(Drift)-003B57?logo=sqlite&logoColor=white)
 ![Local only](https://img.shields.io/badge/Backend-none-lightgrey)
 
 > **A personal office punch in/out tracker: tap to clock in, tap to clock out, and see your hours by day and month.**
 
-InOut is a local-only Flutter app for tracking how long you spend in the office. It records the device time when you clock in and out, adds up your sessions per day, and shows the result in a color-coded calendar with a monthly total. It has no backend, no account and no network access. Everything stays on your device.
+It is built for one person: tracking my own office hours. **Android is the supported platform.** iOS project files exist, but the app has not been built or run on iOS yet.
 
 It is built for one person: tracking office hours reliably across Android and iOS.
 
@@ -39,7 +39,7 @@ Design constraints:
 - **Calendar view** (Sunday-first) with hours per day and color coding
 - **Monthly total** that follows the visible month
 - **Add, edit and delete sessions** manually
-- **CSV export** straight to `Downloads/InOut/` (Android) or `Documents/InOut/` (iOS - accessible via the Apple Files app)
+- **CSV export** straight to `Downloads/InOut/` on Android. (On iOS it would write to `Documents/InOut/`, visible in the Files app, but this is untested.)
 - Light and dark themes
 
 ### Data / Integrity / UX / Reliability
@@ -54,9 +54,9 @@ Design constraints:
 
 | Color | Meaning |
 | --- | --- |
-| 🟩 Green | 9h or more |
-| 🟨 Amber | 6h to under 9h |
-| 🟥 Red | Under 6h |
+| 🟩 Green | 8h or more |
+| 🟨 Amber | 5h to under 8h |
+| 🟥 Red | Under 5h |
 | 🩷 Pale red | Past weekday with no hours |
 | 🟦 Blue | Clocked in right now |
 
@@ -160,23 +160,25 @@ An unfinished session has an empty clock-out and is marked `Open`.
 
 ### Prerequisites
 
-- Flutter SDK (version `3.50.0` or higher, with Dart `^3.14.0`)
-- Android Studio / Xcode (for Android and iOS development)
-- Connected device or emulator (`flutter devices` to list available targets)
+- Flutter **3.50.0** (pinned in `pubspec.yaml`, Dart `^3.14.0`)
+- Android Studio with the Android SDK, and an Android device or emulator
+- Xcode on macOS is only needed for iOS, which is not currently supported
 
-### Setup & Code Generation
+### Setup
 
 ```bash
 # Clone repository
 git clone https://github.com/Sourish-Kanna/InOut.git
-cd in_out
+cd InOut
 
 # Install dependencies
 flutter pub get
 
-# Generate Drift database code (AppDatabase and tables)
+# Only needed after changing the database schema (the generated file is committed)
 dart run build_runner build --delete-conflicting-outputs
 ```
+
+> Flavors are configured for Android only. `pubspec.yaml` sets `default-flavor: prod`, so a plain `flutter run` builds `prod`. Debug builds add a `.debug` suffix to the application ID. iOS would need matching Xcode schemes (`Debug-prod`, `Release-beta`, etc.), which are not set up.
 
 ---
 
@@ -219,7 +221,8 @@ flutter build appbundle --flavor prod
 
 - **Current state:** active, personal use
 - **Known limitations:**
-  - Android is the target platform
+  - Android only: iOS is not built or tested, and has no flavor schemes
+  - Release APKs are arm64 only
   - No night shifts: a session cannot cross midnight
   - Device time is trusted, so changing the phone clock changes the data
   - No in-app backup or restore, only CSV export (no import yet)

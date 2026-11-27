@@ -14,8 +14,7 @@ Duration sessionDuration(Session s, DateTime now) {
         s.clockIn.year == now.year &&
         s.clockIn.month == now.month &&
         s.clockIn.day == now.day;
-    if (!sameDay)
-      {return Duration.zero;} // stale open session, real length unknown
+    if (!sameDay) {return Duration.zero;} // stale open session, real length unknown
     return now.difference(s.clockIn).isNegative
         ? Duration.zero
         : now.difference(s.clockIn);
