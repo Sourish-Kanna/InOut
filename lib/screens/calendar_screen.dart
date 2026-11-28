@@ -21,31 +21,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _selected = DateTime.now();
 
   static DateTime _key(DateTime d) => DateTime(d.year, d.month, d.day);
-  static bool _sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
+  static bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
   /// (background, text) per status, tuned for light and dark.
   (Color, Color)? _palette(DayStatus s, bool dark) => switch (s) {
     DayStatus.met =>
-      dark
-          ? (Colors.green.shade800, Colors.green.shade50)
-          : (Colors.green.shade200, Colors.green.shade900),
+      dark ? (Colors.green.shade800, Colors.green.shade50) : (Colors.green.shade200, Colors.green.shade900),
     DayStatus.partial =>
-      dark
-          ? (Colors.amber.shade800, Colors.amber.shade50)
-          : (Colors.amber.shade200, Colors.amber.shade900),
-    DayStatus.short =>
-      dark
-          ? (Colors.red.shade800, Colors.red.shade50)
-          : (Colors.red.shade200, Colors.red.shade900),
+      dark ? (Colors.amber.shade800, Colors.amber.shade50) : (Colors.amber.shade200, Colors.amber.shade900),
+    DayStatus.short => dark ? (Colors.red.shade800, Colors.red.shade50) : (Colors.red.shade200, Colors.red.shade900),
     DayStatus.missed =>
       dark
           ? (Colors.red.shade900.withValues(alpha: 0.35), Colors.red.shade200)
           : (Colors.red.shade50, Colors.red.shade400),
     DayStatus.inProgress =>
-      dark
-          ? (Colors.blue.shade800, Colors.blue.shade50)
-          : (Colors.blue.shade200, Colors.blue.shade900),
+      dark ? (Colors.blue.shade800, Colors.blue.shade50) : (Colors.blue.shade200, Colors.blue.shade900),
     DayStatus.none => null,
   };
 
@@ -55,10 +45,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       Container(
         width: 14,
         height: 14,
-        decoration: BoxDecoration(
-          color: c,
-          borderRadius: BorderRadius.circular(4),
-        ),
+        decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(4)),
       ),
       const SizedBox(width: 4),
       Text(label, style: Theme.of(context).textTheme.labelSmall),
@@ -71,18 +58,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       spacing: 12,
       runSpacing: 6,
       children: [
-        _legendChip(
-          _palette(DayStatus.met, dark)!.$1,
-          '${dailyTarget.inHours}h+',
-        ),
-        _legendChip(
-          _palette(DayStatus.partial, dark)!.$1,
-          '${partialThreshold.inHours}-${dailyTarget.inHours}h',
-        ),
-        _legendChip(
-          _palette(DayStatus.short, dark)!.$1,
-          'under ${partialThreshold.inHours}h',
-        ),
+        _legendChip(_palette(DayStatus.met, dark)!.$1, '${dailyTarget.inHours}h+'),
+        _legendChip(_palette(DayStatus.partial, dark)!.$1, '${partialThreshold.inHours}-${dailyTarget.inHours}h'),
+        _legendChip(_palette(DayStatus.short, dark)!.$1, 'under ${partialThreshold.inHours}h'),
         _legendChip(_palette(DayStatus.missed, dark)!.$1, 'missed'),
         _legendChip(_palette(DayStatus.inProgress, dark)!.$1, 'in progress'),
       ],
@@ -94,8 +72,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     ref.watch(tickerProvider); // keeps open-session hours live
     final now = DateTime.now();
     final monthKey = DateTime(_focused.year, _focused.month);
-    final sessions =
-        ref.watch(monthSessionsProvider(monthKey)).value ?? const <Session>[];
+    final sessions = ref.watch(monthSessionsProvider(monthKey)).value ?? const <Session>[];
 
     final totals = dailyTotals(sessions, now);
     final openDays = {
@@ -103,31 +80,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         if (s.clockOut == null) _key(s.clockIn),
     };
     final monthTotal = totalFor(sessions, now);
-    final daySessions = sessions
-        .where((s) => _sameDay(s.clockIn, _selected))
-        .toList();
+    final daySessions = sessions.where((s) => _sameDay(s.clockIn, _selected)).toList();
 
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final cellShape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-    );
+    final cellShape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(12));
 
     DayStatus statusOf(DateTime d) {
       final k = _key(d);
-      return dayStatus(
-        day: k,
-        total: totals[k] ?? Duration.zero,
-        now: now,
-        inProgress: openDays.contains(k),
-      );
+      return dayStatus(day: k, total: totals[k] ?? Duration.zero, now: now, inProgress: openDays.contains(k));
     }
 
-    Color fillFor(DateTime d) =>
-        _palette(statusOf(d), dark)?.$1 ?? Colors.transparent;
+    Color fillFor(DateTime d) => _palette(statusOf(d), dark)?.$1 ?? Colors.transparent;
 
-    Color textFor(DateTime d) =>
-        _palette(statusOf(d), dark)?.$2 ?? scheme.onSurface;
+    Color textFor(DateTime d) => _palette(statusOf(d), dark)?.$2 ?? scheme.onSurface;
 
     return Scaffold(
       appBar: AppBar(
@@ -149,18 +115,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               try {
                 final r = await exportCsv(ref.read(databaseProvider));
                 messenger.showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      r == null
-                          ? 'Nothing to export yet'
-                          : 'Saved to ${r.displayPath}',
-                    ),
-                  ),
+                  SnackBar(content: Text(r == null ? 'Nothing to export yet' : 'Saved to ${r.displayPath}')),
                 );
               } catch (_) {
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('Export failed')),
-                );
+                messenger.showSnackBar(const SnackBar(content: Text('Export failed')));
               }
             },
           ),
@@ -184,38 +142,25 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     dayPadding: 2,
                   ),
                   theme: CalendarCarouselThemeData(
-                    day: CalendarDayStyle(
-                      shape: cellShape,
-                      alignment: const Alignment(0, -0.35),
-                    ),
-                    weekend: CalendarDayStyle(
-                      textStyle: TextStyle(color: scheme.onSurfaceVariant),
-                    ),
+                    day: CalendarDayStyle(shape: cellShape, alignment: const Alignment(0, -0.35)),
+                    weekend: CalendarDayStyle(textStyle: TextStyle(color: scheme.onSurfaceVariant)),
                     today: CalendarDayStyle(
                       shape: cellShape,
                       backgroundColor: fillFor(now),
-                      textStyle: TextStyle(
-                        color: textFor(now),
-                        fontWeight: FontWeight.w600,
-                      ),
+                      textStyle: TextStyle(color: textFor(now), fontWeight: FontWeight.w600),
                       border: BorderSide(color: scheme.outline, width: 1.5),
                     ),
                     selected: CalendarDayStyle(
                       shape: cellShape,
                       backgroundColor: fillFor(_selected),
-                      textStyle: TextStyle(
-                        color: textFor(_selected),
-                        fontWeight: FontWeight.w600,
-                      ),
+                      textStyle: TextStyle(color: textFor(_selected), fontWeight: FontWeight.w600),
                       border: BorderSide(color: scheme.primary, width: 2.5),
                     ),
                   ),
                   // hours per day, passed to the calendar as the day's "event"
                   eventsForDate: (date) {
                     final t = totals[_key(date)];
-                    return (t == null || t == Duration.zero)
-                        ? const <Duration>[]
-                        : <Duration>[t];
+                    return (t == null || t == Duration.zero) ? const <Duration>[] : <Duration>[t];
                   },
                   markerBuilder: (context, day) => Align(
                     alignment: Alignment.bottomCenter,
@@ -223,11 +168,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       padding: const EdgeInsets.only(bottom: 4),
                       child: Text(
                         formatHm(day.events.first),
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          color: day.style.textStyle?.color,
-                        ),
+                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: day.style.textStyle?.color),
                       ),
                     ),
                   ),
@@ -238,8 +179,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     if (c == null) return null;
                     return CalendarDayStyle(
                       backgroundColor: c.$1,
-                      textStyle: (day.style.textStyle ?? const TextStyle())
-                          .copyWith(color: c.$2, fontWeight: FontWeight.w600),
+                      textStyle: (day.style.textStyle ?? const TextStyle()).copyWith(
+                        color: c.$2,
+                        fontWeight: FontWeight.w600,
+                      ),
                     );
                   },
                   onDateSelected: (date, _) => setState(() {
@@ -254,10 +197,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(
                   title: const Text('Month total'),
-                  trailing: Text(
-                    formatHm(monthTotal),
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
+                  trailing: Text(formatHm(monthTotal), style: Theme.of(context).textTheme.titleLarge),
                 ),
               ),
               Padding(
@@ -272,34 +212,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 child: DaySummaryRow(summary: daySummary(daySessions, now)),
               ),
               if (daySessions.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('No sessions'),
-                )
+                const Padding(padding: EdgeInsets.all(16), child: Text('No sessions'))
               else
                 for (final s in daySessions)
                   ListTile(
-                    leading: Icon(
-                      s.clockOut == null
-                          ? Icons.timelapse
-                          : Icons.check_circle_outline,
-                    ),
-                    title: Text(
-                      '${formatTime(s.clockIn)} → ${s.clockOut == null ? 'now' : formatTime(s.clockOut!)}',
-                    ),
+                    leading: Icon(s.clockOut == null ? Icons.timelapse : Icons.check_circle_outline),
+                    title: Text('${formatTime(s.clockIn)} → ${s.clockOut == null ? 'now' : formatTime(s.clockOut!)}'),
                     trailing: Text(formatHm(sessionDuration(s, now))),
-                    onTap: () => showSessionEditor(
-                      context,
-                      ref,
-                      day: s.clockIn,
-                      session: s,
-                    ),
+                    onTap: () => showSessionEditor(context, ref, day: s.clockIn, session: s),
                   ),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: OutlinedButton.icon(
-                  onPressed: () =>
-                      showSessionEditor(context, ref, day: _selected),
+                  onPressed: () => showSessionEditor(context, ref, day: _selected),
                   icon: const Icon(Icons.add),
                   label: const Text('Add session'),
                 ),

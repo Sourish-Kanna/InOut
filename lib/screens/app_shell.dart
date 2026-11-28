@@ -16,19 +16,13 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _index,
-        children: const [HomeScreen(), CalendarScreen()],
-      ),
+      body: IndexedStack(index: _index, children: const [HomeScreen(), CalendarScreen()]),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.access_time), label: 'Home'),
-          NavigationDestination(
-            icon: Icon(Icons.calendar_month),
-            label: 'Calendar',
-          ),
+          NavigationDestination(icon: Icon(Icons.calendar_month), label: 'Calendar'),
         ],
       ),
     );

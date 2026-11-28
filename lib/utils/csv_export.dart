@@ -57,16 +57,7 @@ Future<ExportResult?> exportCsv(AppDatabase db) async {
     final timeFmt = DateFormat('HH:mm');
 
     final rows = <List<dynamic>>[
-      [
-        'ID',
-        'Date',
-        'Day',
-        'Clock In',
-        'Clock Out',
-        'Minutes',
-        'Hours',
-        'Status',
-      ],
+      ['ID', 'Date', 'Day', 'Clock In', 'Clock Out', 'Minutes', 'Hours', 'Status'],
     ];
 
     for (final s in sessions) {
@@ -93,14 +84,9 @@ Future<ExportResult?> exportCsv(AppDatabase db) async {
 
     dev.log('CSV export saved to ${file.path}', name: 'InOut');
 
-    final displayLocation = Platform.isIOS
-        ? 'Documents/$_folderName/$fileName'
-        : 'Downloads/$_folderName/$fileName';
+    final displayLocation = Platform.isIOS ? 'Documents/$_folderName/$fileName' : 'Downloads/$_folderName/$fileName';
 
-    return ExportResult(
-      file: file,
-      displayPath: displayLocation,
-    );
+    return ExportResult(file: file, displayPath: displayLocation);
   } catch (e, st) {
     dev.log('CSV export failed', error: e, stackTrace: st, name: 'InOut');
     rethrow;

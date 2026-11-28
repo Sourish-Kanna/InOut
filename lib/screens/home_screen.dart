@@ -18,8 +18,7 @@ class HomeScreen extends ConsumerWidget {
     final now = DateTime.now();
     final db = ref.read(databaseProvider);
     final open = ref.watch(openSessionProvider).value;
-    final sessions =
-        ref.watch(todaySessionsProvider).value ?? const <Session>[];
+    final sessions = ref.watch(todaySessionsProvider).value ?? const <Session>[];
 
     final isIn = open != null;
     final total = totalFor(sessions, now);
@@ -27,9 +26,7 @@ class HomeScreen extends ConsumerWidget {
     final staleOpen = open != null && open.clockIn.isBefore(todayStart);
     final scheme = Theme.of(context).colorScheme;
 
-    final progress = (total.inMinutes / dailyTarget.inMinutes)
-        .clamp(0.0, 1.0)
-        .toDouble();
+    final progress = (total.inMinutes / dailyTarget.inMinutes).clamp(0.0, 1.0).toDouble();
     final remaining = dailyTarget - total;
 
     return Scaffold(
@@ -48,7 +45,7 @@ class HomeScreen extends ConsumerWidget {
                       color: scheme.errorContainer,
                       child: ListTile(
                         leading: const Icon(Icons.warning_amber),
-                    title: const Text('Still clocked in from an earlier day'),
+                        title: const Text('Still clocked in from an earlier day'),
                         subtitle: Text(
                           'Since ${formatTime(open.clockIn)} on '
                           '${open.clockIn.day}/${open.clockIn.month}',
@@ -60,10 +57,7 @@ class HomeScreen extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(vertical: 20),
                       child: Column(
                         children: [
-                          Text(
-                            DateFormat('EEEE, d MMM').format(now),
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
+                          Text(DateFormat('EEEE, d MMM').format(now), style: Theme.of(context).textTheme.labelLarge),
                           const SizedBox(height: 12),
                           CircularPercentIndicator(
                             radius: 85, // 170 px wide
@@ -74,20 +68,13 @@ class HomeScreen extends ConsumerWidget {
                             animationDuration: 600,
                             circularStrokeCap: CircularStrokeCap.round,
                             backgroundColor: scheme.surfaceContainerHighest,
-                            progressColor: progress >= 1
-                                ? Colors.green
-                                : scheme.secondary,
+                            progressColor: progress >= 1 ? Colors.green : scheme.secondary,
                             center: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
+                                Text(formatHm(total), style: Theme.of(context).textTheme.headlineMedium),
                                 Text(
-                                  formatHm(total),
-                              style: Theme.of(context).textTheme.headlineMedium,
-                                ),
-                                Text(
-                                  remaining > Duration.zero
-                                      ? '${formatHm(remaining)} left'
-                                      : 'Target met',
+                                  remaining > Duration.zero ? '${formatHm(remaining)} left' : 'Target met',
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
@@ -96,9 +83,7 @@ class HomeScreen extends ConsumerWidget {
                           const SizedBox(height: 12),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: DaySummaryRow(
-                              summary: daySummary(sessions, now),
-                            ),
+                            child: DaySummaryRow(summary: daySummary(sessions, now)),
                           ),
                         ],
                       ),
@@ -111,18 +96,11 @@ class HomeScreen extends ConsumerWidget {
                         isIn ? await db.punchOut() : await db.punchIn();
                       } on StaleSessionException catch (e) {
                         if (!context.mounted) return;
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(SnackBar(content: Text(e.message)));
-                        showSessionEditor(
-                          context,
-                          ref,
-                          day: open!.clockIn,
-                          session: open,
-                        );
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+                        showSessionEditor(context, ref, day: open!.clockIn, session: open);
                       } on SessionException catch (e) {
                         if (!context.mounted) return;
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(SnackBar(content: Text(e.message)));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
                       }
                     },
                     icon: Icon(isIn ? Icons.logout : Icons.login),
@@ -131,37 +109,26 @@ class HomeScreen extends ConsumerWidget {
                       minimumSize: const Size.fromHeight(64),
                       textStyle: const TextStyle(fontSize: 20),
                       backgroundColor: isIn ? scheme.secondary : scheme.primary,
-                  foregroundColor: isIn ? scheme.onSecondary : scheme.onPrimary,
+                      foregroundColor: isIn ? scheme.onSecondary : scheme.onPrimary,
                     ),
                   ),
                   const SizedBox(height: 16),
-              Text('Sessions', style: Theme.of(context).textTheme.titleMedium),
+                  Text('Sessions', style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
                   Expanded(
                     child: sessions.isEmpty
                         ? const Center(child: Text('No sessions today'))
                         : ListView.separated(
                             itemCount: sessions.length,
-                        separatorBuilder: (_, _) => const Divider(height: 1),
+                            separatorBuilder: (_, _) => const Divider(height: 1),
                             itemBuilder: (_, i) {
                               final s = sessions[i];
-                              final out = s.clockOut == null
-                                  ? 'now'
-                                  : formatTime(s.clockOut!);
+                              final out = s.clockOut == null ? 'now' : formatTime(s.clockOut!);
                               return ListTile(
-                                leading: Icon(
-                                  s.clockOut == null
-                                      ? Icons.timelapse
-                                      : Icons.check_circle_outline,
-                                ),
+                                leading: Icon(s.clockOut == null ? Icons.timelapse : Icons.check_circle_outline),
                                 title: Text('${formatTime(s.clockIn)} → $out'),
-                            trailing: Text(formatHm(sessionDuration(s, now))),
-                                onTap: () => showSessionEditor(
-                                  context,
-                                  ref,
-                                  day: s.clockIn,
-                                  session: s,
-                                ),
+                                trailing: Text(formatHm(sessionDuration(s, now))),
+                                onTap: () => showSessionEditor(context, ref, day: s.clockIn, session: s),
                               );
                             },
                           ),

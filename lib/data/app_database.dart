@@ -8,8 +8,7 @@ part 'app_database.g.dart';
 class Sessions extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get clockIn => dateTime()();
-  DateTimeColumn get clockOut =>
-      dateTime().nullable()(); // null = still clocked in
+  DateTimeColumn get clockOut => dateTime().nullable()(); // null = still clocked in
 }
 
 class SessionException implements Exception {
@@ -19,12 +18,10 @@ class SessionException implements Exception {
 
 /// Open session from an earlier day: user must set the real clock-out.
 class StaleSessionException extends SessionException {
-  StaleSessionException()
-    : super('Session started on an earlier day. Set the real clock-out time.');
+  StaleSessionException() : super('Session started on an earlier day. Set the real clock-out time.');
 }
 
-bool _sameDay(DateTime a, DateTime b) =>
-    a.year == b.year && a.month == b.month && a.day == b.day;
+bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
 @DriftDatabase(tables: [Sessions])
 class AppDatabase extends _$AppDatabase {
@@ -44,19 +41,13 @@ class AppDatabase extends _$AppDatabase {
   /// Sessions whose clock_in falls in [start, end).
   Stream<List<Session>> watchSessionsBetween(DateTime start, DateTime end) {
     return (select(sessions)
-          ..where(
-            (s) =>
-                s.clockIn.isBiggerOrEqualValue(start) &
-                s.clockIn.isSmallerThanValue(end),
-          )
+          ..where((s) => s.clockIn.isBiggerOrEqualValue(start) & s.clockIn.isSmallerThanValue(end))
           ..orderBy([(s) => OrderingTerm.asc(s.clockIn)]))
         .watch();
   }
 
   Future<void> punchIn() => transaction(() async {
-    final open = await (select(
-      sessions,
-    )..where((s) => s.clockOut.isNull())).get();
+    final open = await (select(sessions)..where((s) => s.clockOut.isNull())).get();
     if (open.isNotEmpty) return; // already clocked in
     final now = DateTime.now();
     await _validate(now, null); // catches device clock set back
@@ -75,36 +66,25 @@ class AppDatabase extends _$AppDatabase {
     if (!now.isAfter(open.clockIn)) {
       throw SessionException('Device time is before the clock-in time');
     }
-    await (update(sessions)..where((s) => s.id.equals(open.id))).write(
-      SessionsCompanion(clockOut: Value(now)),
-    );
+    await (update(sessions)..where((s) => s.id.equals(open.id))).write(SessionsCompanion(clockOut: Value(now)));
   });
 
-  Future<void> addSession(DateTime start, DateTime end) =>
-      transaction(() async {
-        await _validate(start, end);
-        await into(sessions).insert(
-          SessionsCompanion.insert(clockIn: start, clockOut: Value(end)),
-        );
-      });
+  Future<void> addSession(DateTime start, DateTime end) => transaction(() async {
+    await _validate(start, end);
+    await into(sessions).insert(SessionsCompanion.insert(clockIn: start, clockOut: Value(end)));
+  });
 
   /// [end] null is allowed only while no other session is open.
-  Future<void> updateSession(int id, DateTime start, DateTime? end) =>
-      transaction(() async {
-        await _validate(start, end, excludeId: id);
-        await (update(sessions)..where((s) => s.id.equals(id))).write(
-          SessionsCompanion(clockIn: Value(start), clockOut: Value(end)),
-        );
-      });
+  Future<void> updateSession(int id, DateTime start, DateTime? end) => transaction(() async {
+    await _validate(start, end, excludeId: id);
+    await (update(
+      sessions,
+    )..where((s) => s.id.equals(id))).write(SessionsCompanion(clockIn: Value(start), clockOut: Value(end)));
+  });
 
-  Future<void> deleteSession(int id) =>
-      (delete(sessions)..where((s) => s.id.equals(id))).go();
+  Future<void> deleteSession(int id) => (delete(sessions)..where((s) => s.id.equals(id))).go();
 
-  Future<void> _validate(
-    DateTime start,
-    DateTime? end, {
-    int? excludeId,
-  }) async {
+  Future<void> _validate(DateTime start, DateTime? end, {int? excludeId}) async {
     final now = DateTime.now();
     if (start.isAfter(now)) throw SessionException('Clock-in is in the future');
     if (end != null) {
@@ -122,11 +102,7 @@ class AppDatabase extends _$AppDatabase {
       final others =
           await (select(sessions)
                 ..where((s) => s.clockOut.isNull())
-                ..where(
-                  (s) => excludeId == null
-                      ? const Constant(true)
-                      : s.id.equals(excludeId).not(),
-                ))
+                ..where((s) => excludeId == null ? const Constant(true) : s.id.equals(excludeId).not()))
               .get();
       if (others.isNotEmpty) throw SessionException('Already clocked in');
     }
@@ -140,17 +116,12 @@ class AppDatabase extends _$AppDatabase {
                     s.clockIn.isSmallerThanValue(endBound) &
                     (s.clockOut.isNull() | s.clockOut.isBiggerThanValue(start)),
               )
-              ..where(
-                (s) => excludeId == null
-                    ? const Constant(true)
-                    : s.id.equals(excludeId).not(),
-              ))
+              ..where((s) => excludeId == null ? const Constant(true) : s.id.equals(excludeId).not()))
             .get();
     if (overlapping.isNotEmpty) {
       throw SessionException('Overlaps another session');
     }
   }
 
-  Future<List<Session>> getAllSessions() =>
-      (select(sessions)..orderBy([(s) => OrderingTerm.asc(s.clockIn)])).get();
+  Future<List<Session>> getAllSessions() => (select(sessions)..orderBy([(s) => OrderingTerm.asc(s.clockIn)])).get();
 }

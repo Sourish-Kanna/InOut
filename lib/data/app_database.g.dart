@@ -17,13 +17,9 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
     hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
+    defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
   );
-  static const VerificationMeta _clockInMeta = const VerificationMeta(
-    'clockIn',
-  );
+  static const VerificationMeta _clockInMeta = const VerificationMeta('clockIn');
   @override
   late final GeneratedColumn<DateTime> clockIn = GeneratedColumn<DateTime>(
     'clock_in',
@@ -32,9 +28,7 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _clockOutMeta = const VerificationMeta(
-    'clockOut',
-  );
+  static const VerificationMeta _clockOutMeta = const VerificationMeta('clockOut');
   @override
   late final GeneratedColumn<DateTime> clockOut = GeneratedColumn<DateTime>(
     'clock_out',
@@ -51,28 +45,19 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
   String get actualTableName => $name;
   static const String $name = 'sessions';
   @override
-  VerificationContext validateIntegrity(
-    Insertable<Session> instance, {
-    bool isInserting = false,
-  }) {
+  VerificationContext validateIntegrity(Insertable<Session> instance, {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
     if (data.containsKey('clock_in')) {
-      context.handle(
-        _clockInMeta,
-        clockIn.isAcceptableOrUnknown(data['clock_in']!, _clockInMeta),
-      );
+      context.handle(_clockInMeta, clockIn.isAcceptableOrUnknown(data['clock_in']!, _clockInMeta));
     } else if (isInserting) {
       context.missing(_clockInMeta);
     }
     if (data.containsKey('clock_out')) {
-      context.handle(
-        _clockOutMeta,
-        clockOut.isAcceptableOrUnknown(data['clock_out']!, _clockOutMeta),
-      );
+      context.handle(_clockOutMeta, clockOut.isAcceptableOrUnknown(data['clock_out']!, _clockOutMeta));
     }
     return context;
   }
@@ -83,18 +68,9 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
   Session map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Session(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      clockIn: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}clock_in'],
-      )!,
-      clockOut: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}clock_out'],
-      ),
+      id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      clockIn: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}clock_in'])!,
+      clockOut: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}clock_out']),
     );
   }
 
@@ -124,16 +100,11 @@ class Session extends DataClass implements Insertable<Session> {
     return SessionsCompanion(
       id: Value(id),
       clockIn: Value(clockIn),
-      clockOut: clockOut == null && nullToAbsent
-          ? const Value.absent()
-          : Value(clockOut),
+      clockOut: clockOut == null && nullToAbsent ? const Value.absent() : Value(clockOut),
     );
   }
 
-  factory Session.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
+  factory Session.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Session(
       id: serializer.fromJson<int>(json['id']),
@@ -151,11 +122,7 @@ class Session extends DataClass implements Insertable<Session> {
     };
   }
 
-  Session copyWith({
-    int? id,
-    DateTime? clockIn,
-    Value<DateTime?> clockOut = const Value.absent(),
-  }) => Session(
+  Session copyWith({int? id, DateTime? clockIn, Value<DateTime?> clockOut = const Value.absent()}) => Session(
     id: id ?? this.id,
     clockIn: clockIn ?? this.clockIn,
     clockOut: clockOut.present ? clockOut.value : this.clockOut,
@@ -183,10 +150,7 @@ class Session extends DataClass implements Insertable<Session> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Session &&
-          other.id == this.id &&
-          other.clockIn == this.clockIn &&
-          other.clockOut == this.clockOut);
+      (other is Session && other.id == this.id && other.clockIn == this.clockIn && other.clockOut == this.clockOut);
 }
 
 class SessionsCompanion extends UpdateCompanion<Session> {
@@ -215,16 +179,8 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     });
   }
 
-  SessionsCompanion copyWith({
-    Value<int>? id,
-    Value<DateTime>? clockIn,
-    Value<DateTime?>? clockOut,
-  }) {
-    return SessionsCompanion(
-      id: id ?? this.id,
-      clockIn: clockIn ?? this.clockIn,
-      clockOut: clockOut ?? this.clockOut,
-    );
+  SessionsCompanion copyWith({Value<int>? id, Value<DateTime>? clockIn, Value<DateTime?>? clockOut}) {
+    return SessionsCompanion(id: id ?? this.id, clockIn: clockIn ?? this.clockIn, clockOut: clockOut ?? this.clockOut);
   }
 
   @override
@@ -258,8 +214,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $SessionsTable sessions = $SessionsTable(this);
   @override
-  Iterable<TableInfo<Table, Object?>> get allTables =>
-      allSchemaEntities.whereType<TableInfo<Table, Object?>>();
+  Iterable<TableInfo<Table, Object?>> get allTables => allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [sessions];
 }
@@ -275,8 +230,7 @@ typedef $$SessionsTableUpdateCompanionBuilder = SessionsCompanion Function({
   Value<DateTime?> clockOut,
 });
 
-class $$SessionsTableFilterComposer
-    extends Composer<_$AppDatabase, $SessionsTable> {
+class $$SessionsTableFilterComposer extends Composer<_$AppDatabase, $SessionsTable> {
   $$SessionsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -284,24 +238,16 @@ class $$SessionsTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<DateTime> get clockIn => $composableBuilder(
-    column: $table.clockIn,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<DateTime> get clockIn =>
+      $composableBuilder(column: $table.clockIn, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<DateTime> get clockOut => $composableBuilder(
-    column: $table.clockOut,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnFilters<DateTime> get clockOut =>
+      $composableBuilder(column: $table.clockOut, builder: (column) => ColumnFilters(column));
 }
 
-class $$SessionsTableOrderingComposer
-    extends Composer<_$AppDatabase, $SessionsTable> {
+class $$SessionsTableOrderingComposer extends Composer<_$AppDatabase, $SessionsTable> {
   $$SessionsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -309,24 +255,16 @@ class $$SessionsTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<DateTime> get clockIn => $composableBuilder(
-    column: $table.clockIn,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<DateTime> get clockIn =>
+      $composableBuilder(column: $table.clockIn, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<DateTime> get clockOut => $composableBuilder(
-    column: $table.clockOut,
-    builder: (column) => ColumnOrderings(column),
-  );
+  ColumnOrderings<DateTime> get clockOut =>
+      $composableBuilder(column: $table.clockOut, builder: (column) => ColumnOrderings(column));
 }
 
-class $$SessionsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $SessionsTable> {
+class $$SessionsTableAnnotationComposer extends Composer<_$AppDatabase, $SessionsTable> {
   $$SessionsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -334,14 +272,11 @@ class $$SessionsTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<int> get id => $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get clockIn =>
-      $composableBuilder(column: $table.clockIn, builder: (column) => column);
+  GeneratedColumn<DateTime> get clockIn => $composableBuilder(column: $table.clockIn, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get clockOut =>
-      $composableBuilder(column: $table.clockOut, builder: (column) => column);
+  GeneratedColumn<DateTime> get clockOut => $composableBuilder(column: $table.clockOut, builder: (column) => column);
 }
 
 class $$SessionsTableTableManager
@@ -364,36 +299,24 @@ class $$SessionsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () =>
-              $$SessionsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$SessionsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$SessionsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () => $$SessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$SessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$SessionsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
             Value<DateTime> clockIn = const Value.absent(),
             Value<DateTime?> clockOut = const Value.absent(),
           }) => SessionsCompanion(id: id, clockIn: clockIn, clockOut: clockOut),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required DateTime clockIn,
-                Value<DateTime?> clockOut = const Value.absent(),
-              }) => SessionsCompanion.insert(
-                id: id,
-                clockIn: clockIn,
-                clockOut: clockOut,
-              ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required DateTime clockIn,
+            Value<DateTime?> clockOut = const Value.absent(),
+          }) => SessionsCompanion.insert(id: id, clockIn: clockIn, clockOut: clockOut),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
                   e.readTable<$SessionsTable, Session>(table),
-                  BaseReferences<_$AppDatabase, $SessionsTable, Session>(
-                    db,
-                    table,
-                    e,
-                  ),
+                  BaseReferences<_$AppDatabase, $SessionsTable, Session>(db, table, e),
                 ),
               )
               .toList(),
@@ -420,6 +343,5 @@ typedef $$SessionsTableProcessedTableManager =
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
-  $$SessionsTableTableManager get sessions =>
-      $$SessionsTableTableManager(_db, _db.sessions);
+  $$SessionsTableTableManager get sessions => $$SessionsTableTableManager(_db, _db.sessions);
 }

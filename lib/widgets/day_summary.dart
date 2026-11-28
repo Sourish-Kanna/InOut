@@ -26,10 +26,7 @@ class DaySummaryRow extends StatelessWidget {
     return Row(
       children: [
         stat('First in', formatTime(s.firstIn)),
-        stat(
-          'Last out',
-          s.lastOut == null ? 'still in' : formatTime(s.lastOut!),
-        ),
+        stat('Last out', s.lastOut == null ? 'still in' : formatTime(s.lastOut!)),
         stat('Span', s.span == null ? '-' : formatHm(s.span!)),
       ],
     );

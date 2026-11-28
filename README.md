@@ -4,13 +4,15 @@
 ![Dart](https://img.shields.io/badge/Dart-3.14-0175C2?logo=dart&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)
 ![Storage](https://img.shields.io/badge/Storage-SQLite%20(Drift)-003B57?logo=sqlite&logoColor=white)
-![Local only](https://img.shields.io/badge/Backend-none-lightgrey)
+![Backend](https://img.shields.io/badge/Backend-none-lightgrey)
 
 > **A personal office punch in/out tracker: tap to clock in, tap to clock out, and see your hours by day and month.**
 
+InOut is a local-first Flutter app for tracking how long you spend in the office. It records the device time when you clock in and out, adds up your sessions per day, and shows the result in a color-coded calendar with a monthly total. It has no backend and no account.
+
 It is built for one person: tracking my own office hours. **Android is the supported platform.** iOS project files exist, but the app has not been built or run on iOS yet.
 
-It is built for one person: tracking office hours reliably across Android and iOS.
+<!-- Screenshots: add home.png and calendar.png (light and dark) here -->
 
 ---
 
@@ -34,12 +36,12 @@ Design constraints:
 
 - One-tap **Clock In / Clock Out** with the current device time
 - **Multiple sessions per day** (lunch breaks, stepping out)
-- **Live daily total** with a progress ring toward a fixed **8 hour** target
+- **Live daily total** with a progress ring toward a fixed daily target (8 hours)
 - **First in, last out and the span between them** for any day
 - **Calendar view** (Sunday-first) with hours per day and color coding
 - **Monthly total** that follows the visible month
 - **Add, edit and delete sessions** manually
-- **CSV export** straight to `Downloads/InOut/` on Android. (On iOS it would write to `Documents/InOut/`, visible in the Files app, but this is untested.)
+- **CSV export** straight to `Downloads/InOut/` on Android (iOS would use `Documents/InOut/`, visible in the Files app, but this is untested)
 - Light and dark themes
 
 ### Data / Integrity / UX / Reliability
@@ -48,7 +50,7 @@ Design constraints:
 - Overlapping sessions, future times, and clock-out before clock-in are rejected
 - A session left open from an earlier day is flagged, and clocking out opens the editor so you can enter the real time
 - Weekends are never marked as missed, but hours logged on them still count
-- Data stays on the device. Uninstalling the app deletes it, so use CSV export as a backup
+- Data is stored in a local SQLite database on the device. Use CSV export to keep a copy
 
 ### Calendar Colors (Mon-Fri)
 
@@ -60,7 +62,7 @@ Design constraints:
 | 🩷 Pale red | Past weekday with no hours |
 | 🟦 Blue | Clocked in right now |
 
-Today is colored by the hours logged so far, and turns blue only while a session is running.
+Today is colored by the hours logged so far, and turns blue only while a session is running. The target and thresholds are constants in `lib/utils/time_utils.dart`.
 
 ### First in / last out
 
@@ -143,7 +145,7 @@ lib/
 
 ### CSV export
 
-Saved to `Downloads/InOut/` (Android) or `Documents/InOut/` (iOS) as `inout_sessions_<timestamp>.csv`:
+Saved to `Downloads/InOut/inout_sessions_<timestamp>.csv`:
 
 ```csv
 ID,Date,Day,Clock In,Clock Out,Minutes,Hours,Status
@@ -156,18 +158,18 @@ An unfinished session has an empty clock-out and is marked `Open`.
 
 ---
 
-## 🚀 Getting Started & Build Instructions
+## 🚀 Getting Started
 
 ### Prerequisites
 
 - Flutter **3.50.0** (pinned in `pubspec.yaml`, Dart `^3.14.0`)
 - Android Studio with the Android SDK, and an Android device or emulator
-- Xcode on macOS is only needed for iOS, which is not currently supported
+- **Minimum Android version:** 7.0 (API 24)
 
 ### Setup
 
 ```bash
-# Clone repository
+# Clone
 git clone https://github.com/Sourish-Kanna/InOut.git
 cd InOut
 
@@ -176,18 +178,30 @@ flutter pub get
 
 # Only needed after changing the database schema (the generated file is committed)
 dart run build_runner build --delete-conflicting-outputs
+
+# Run locally (the default flavor is prod)
+flutter run
 ```
 
-> Flavors are configured for Android only. `pubspec.yaml` sets `default-flavor: prod`, so a plain `flutter run` builds `prod`. Debug builds add a `.debug` suffix to the application ID. iOS would need matching Xcode schemes (`Debug-prod`, `Release-beta`, etc.), which are not set up.
+Optional, to regenerate the app icon and launcher name:
+
+```bash
+dart run flutter_launcher_icons
+dart run launcher_name:main
+```
 
 ---
 
 ## 🎛 Product Flavors
 
-The project is configured with two product flavors (`prod` and `beta`):
+The project is configured with two Android product flavors:
 
-- **`prod`**: Standard production flavor (`com.sourish.in_out`).
-- **`beta`**: Beta flavor (`com.sourish.in_out.beta`, with `-beta` version suffix and `.beta` application ID suffix).
+- **`prod`**: production flavor (`com.sourish.in_out`)
+- **`beta`**: beta flavor (`com.sourish.in_out.beta`, with a `-beta` version suffix)
+
+Both install side by side. Debug builds add a `.debug` suffix to the application ID.
+
+> Flavors are configured for Android only. `pubspec.yaml` sets `default-flavor: prod`, so a plain `flutter run` builds `prod`. iOS would need matching Xcode schemes, which are not set up.
 
 ### Running with Flavors
 
@@ -195,24 +209,21 @@ The project is configured with two product flavors (`prod` and `beta`):
 # List connected devices
 flutter devices
 
-# Run Production flavor on connected device/emulator
+# Run the production flavor
 flutter run --flavor prod -d <device-id>
 
-# Run Beta flavor on connected device/emulator
+# Run the beta flavor
 flutter run --flavor beta -d <device-id>
 ```
 
 ### Building Release Packages
 
 ```bash
-# Build release APK for Production flavor
+# Release APK, production flavor
 flutter build apk --flavor prod
 
-# Build release APK for Beta flavor
+# Release APK, beta flavor
 flutter build apk --flavor beta
-
-# Build App Bundle for Play Store (Production)
-flutter build appbundle --flavor prod
 ```
 
 ---
@@ -222,17 +233,17 @@ flutter build appbundle --flavor prod
 - **Current state:** active, personal use
 - **Known limitations:**
   - Android only: iOS is not built or tested, and has no flavor schemes
-  - Release APKs are arm64 only
+  - Release APKs target arm64 only, by design
   - No night shifts: a session cannot cross midnight
   - Device time is trusted, so changing the phone clock changes the data
-  - No in-app backup or restore, only CSV export (no import yet)
+  - CSV export only: there is no in-app import or restore
   - No automated tests
 
 ---
 
 ## ⚠️ Disclaimer
 
-A personal project for tracking my own hours. It is not an attendance or payroll system, and it comes with no guarantees. Your data lives only on your device.
+A personal project for tracking my own hours. It is not an attendance or payroll system, and it comes with no guarantees.
 
 ---
 
